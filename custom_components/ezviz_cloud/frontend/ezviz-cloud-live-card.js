@@ -479,6 +479,7 @@ class EzvizCloudLiveCard extends HTMLElement {
   }
 
   async _play() {
+    this._videoUp = false;
     this._box.textContent = "";
     this._showProgress(2, "connecting");
     let auth;
@@ -610,10 +611,12 @@ player.eventEmitter.on('message',(msg,type)=>{if(type==='fetchError')send({error
         );
       }
       else if (m.ready) {
+        this._videoUp = true;
         this._hideProgress();
         this._paintRecordButton();
       }
-      else this._showProgress(m.stage, m.key);
+      // A late stage message must not put the overlay back over a playing video.
+      else if (!this._videoUp) this._showProgress(m.stage, m.key);
     };
     window.addEventListener("message", this._onMessage);
     this._box.insertBefore(iframe, this._overlay);
