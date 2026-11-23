@@ -572,11 +572,13 @@ const startRec=()=>{
   };
   v.play().catch(()=>{});
 };
+const snap=()=>{const c=document.querySelector('#v canvas');if(!c)return;const s=c.captureStream(1);const v=document.createElement('video');v.muted=true;v.srcObject=s;v.onloadeddata=()=>{const k=document.createElement('canvas');k.width=v.videoWidth;k.height=v.videoHeight;k.getContext('2d').drawImage(v,0,0);k.toBlob((b)=>{if(b)send({snap:b});s.getTracks().forEach(x=>x.stop());v.srcObject=null;},'image/jpeg',0.92);};v.play().catch(()=>{});};
 // Record / Stop recording pressed on the card during the live view.
 addEventListener('message',(e)=>{
   if(e.source!==parent)return;
   if(e.data==='start-recording'&&!(rec&&rec.state!=='inactive'))startRec();
   if(e.data==='stop-recording'&&rec&&rec.state!=='inactive')rec.stop();
+  if(e.data==='snapshot')snap();
 });
 player.eventEmitter.on(E.firstFrameDisplay,()=>{send({ready:true});if(R)startRec();});
 // Stream failures (camera did not answer, bad code...) only arrive as messages.
@@ -586,6 +588,19 @@ player.eventEmitter.on('message',(msg,type)=>{if(type==='fetchError')send({error
     this._onMessage = (ev) => {
       const m = ev.source === iframe.contentWindow && ev.data?.ezvizCloud;
       if (!m) return;
+      // Snapshot button: download the current frame on this device.
+      if (m.snap) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(m.snap);
+        const d = new Date();
+        const p = (n) => String(n).padStart(2, "0");
+        a.download = `${String(this._config.title || this._config.serial).replace(/\s+/g, "_")}_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+        return;
+      }
       if (m.recording) {
         this._setBadge(t(this._lang, "recording"));
         return;
@@ -643,6 +658,12 @@ player.eventEmitter.on('message',(msg,type)=>{if(type==='fetchError')send({error
     document.addEventListener("fullscreenchange", onFs);
     document.addEventListener("webkitfullscreenchange", onFs);
     box.appendChild(fs);
+    const snapBtn = document.createElement("button");
+    snapBtn.textContent = "\u{1F4F7} Capture";
+    snapBtn.style.cssText =
+      "position:absolute;right:8px;top:8px;z-index:1;font:inherit;font-size:12px;padding:4px 10px;border:0;border-radius:12px;cursor:pointer;background:rgba(0,0,0,.6);color:#fff";
+    snapBtn.addEventListener("click", () => box.querySelector("iframe")?.contentWindow?.postMessage("snapshot", "*"));
+    box.appendChild(snapBtn);
     this._timer = setTimeout(
       () => (this._overlay ? this._fail(t(this._lang, "no_video", { s: max_seconds })) : this._stop()),
       max_seconds * 1000,
