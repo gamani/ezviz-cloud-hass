@@ -543,7 +543,7 @@ send({stage:25,key:"loading_decoder"});
 const R=${this._session ? "true" : "false"};
 // The player sizes its canvas to its box: a fixed 720p box, scaled down to the
 // card, keeps recordings at 720p whatever the card's size.
-const fit=()=>{document.getElementById('v').style.transform='scale('+Math.min(innerWidth/1280,innerHeight/720)+')';};
+const fit=()=>{const s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById('v').style.transform='translate('+((innerWidth-1280*s)/2)+'px,'+((innerHeight-720*s)/2)+'px) scale('+s+')';};
 fit();addEventListener('resize',fit);
 const player=new EZUIKit.EZUIKitPlayer({id:'v',width:1280,height:720,...o,
   handleError:(e)=>send({error:e&&(e.msg||e.data&&e.data.msg||e.type)})});
@@ -626,6 +626,23 @@ player.eventEmitter.on('message',(msg,type)=>{if(type==='fetchError')send({error
       "position:absolute;right:8px;bottom:8px;z-index:1;font:inherit;font-size:12px;padding:4px 10px;border:0;border-radius:12px;cursor:pointer;background:rgba(0,0,0,.6);color:#fff";
     stop.addEventListener("click", () => this._stop());
     this._box.appendChild(stop);
+    // Fullscreen button (double-click on the video works too).
+    const fs = document.createElement("button");
+    fs.textContent = "\u26F6 Plein \u00e9cran";
+    fs.style.cssText =
+      "position:absolute;left:50%;transform:translateX(-50%);bottom:8px;z-index:1;font:inherit;font-size:12px;padding:4px 10px;border:0;border-radius:12px;cursor:pointer;background:rgba(0,0,0,.6);color:#fff";
+    const box = this._box;
+    const toggleFs = () => {
+      const cur = document.fullscreenElement || document.webkitFullscreenElement;
+      if (cur) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else (box.requestFullscreen || box.webkitRequestFullscreen).call(box);
+    };
+    fs.addEventListener("click", toggleFs);
+    box.addEventListener("dblclick", toggleFs);
+    const onFs = () => { fs.textContent = (document.fullscreenElement || document.webkitFullscreenElement) ? "\u2715 Quitter" : "\u26F6 Plein \u00e9cran"; box.style.background = "#000"; };
+    document.addEventListener("fullscreenchange", onFs);
+    document.addEventListener("webkitfullscreenchange", onFs);
+    box.appendChild(fs);
     this._timer = setTimeout(
       () => (this._overlay ? this._fail(t(this._lang, "no_video", { s: max_seconds })) : this._stop()),
       max_seconds * 1000,
