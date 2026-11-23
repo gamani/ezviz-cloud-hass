@@ -517,7 +517,7 @@ class EzvizCloudLiveCard extends HTMLElement {
     const base = new URL(EZUIKIT_BASE, location.href).href;
     const opts = JSON.stringify({
       accessToken: auth.access_token,
-      url: `ezopen://${code ? `${code}@` : ""}${auth.ezopen_host || "open.ezviz.com"}/${serial}/${channel}.live`,
+      url: `ezopen://${code ? `${code}@` : ""}${auth.ezopen_host || "open.ezviz.com"}/${serial}/${channel}${this._config.hd ? ".hd" : ""}.live`,
       env: { domain: auth.domain },
       staticPath: `${base}/ezuikit_static`,
       language: "en",
