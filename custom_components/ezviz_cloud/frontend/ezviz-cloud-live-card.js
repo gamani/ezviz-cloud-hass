@@ -378,7 +378,7 @@ class EzvizCloudLiveCard extends HTMLElement {
         { name: "code", selector: { text: { type: "password" } } },
         { name: "channel", selector: { number: { min: 1, max: 64, mode: "box" } } },
         { name: "title", selector: { text: {} } },
-        { name: "max_seconds", selector: { number: { min: 10, max: 600, unit_of_measurement: "s", mode: "box" } } },
+        { name: "max_seconds", selector: { number: { min: 0, max: 600, unit_of_measurement: "s", mode: "box" } } },
       ],
       computeLabel: (s) => t(lang, `label_${s.name}`),
       computeHelper: (s) => (s.name === "code" ? t(lang, "code_helper") : undefined),
@@ -665,8 +665,8 @@ player.eventEmitter.on('message',(msg,type)=>{if(type==='fetchError')send({error
     snapBtn.addEventListener("click", () => box.querySelector("iframe")?.contentWindow?.postMessage("snapshot", "*"));
     box.appendChild(snapBtn);
     this._timer = setTimeout(
-      () => (this._overlay ? this._fail(t(this._lang, "no_video", { s: max_seconds })) : this._stop()),
-      max_seconds * 1000,
+      () => (this._overlay ? this._fail(t(this._lang, "no_video", { s: max_seconds || 60 })) : max_seconds ? this._stop() : null),
+      (max_seconds || 60) * 1000,
     );
   }
 
@@ -721,8 +721,8 @@ player.eventEmitter.on('message',(msg,type)=>{if(type==='fetchError')send({error
       if (auth.record) this._recordClip(auth.record_entity);
     }
     this._timer = setTimeout(
-      () => (this._overlay ? this._fail(t(this._lang, "no_video", { s: this._config.max_seconds })) : this._stop()),
-      this._config.max_seconds * 1000,
+      () => (this._overlay ? this._fail(t(this._lang, "no_video", { s: this._config.max_seconds || 60 })) : this._config.max_seconds ? this._stop() : null),
+      (this._config.max_seconds || 60) * 1000,
     );
   }
 
