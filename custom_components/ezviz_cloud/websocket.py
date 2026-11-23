@@ -80,9 +80,7 @@ async def ws_get_token(
             },
         )
         return
-    if not connection.user.is_admin:
-        connection.send_error(msg["id"], ERR_UNAUTHORIZED, "Unauthorized")
-        return
+    # Fork (gamani): non-admin users may watch the live stream too (family dashboard).
     manager = account.manager
     try:
         token = await manager.async_get_token()
