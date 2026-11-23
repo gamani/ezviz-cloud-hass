@@ -397,6 +397,8 @@ class EzvizCloudLiveCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    // Background picture while no video is playing.
+    if (this._box && !this._overlay && !this._box.querySelector("iframe") && !this._live) this._applyBg();
     if (this._live) this._live.hass = hass;
     // setConfig renders before hass arrives; redraw once the language is known,
     // unless a stream is on screen.
@@ -419,6 +421,17 @@ class EzvizCloudLiveCard extends HTMLElement {
     this._stop();
   }
 
+  // `background`: a camera entity whose picture is shown behind the "Watch live" button.
+  _applyBg() {
+    const st = this._config?.background && this._hass?.states[this._config.background];
+    const pic = st?.attributes?.entity_picture;
+    if (!pic || !this._box) return;
+    const url = `${pic}${pic.includes("?") ? "&" : "?"}t=${Math.floor(Date.now() / 600000)}`;
+    if (this._bgUrl === url && this._box.style.backgroundImage) return;
+    this._bgUrl = url;
+    this._box.style.background = `#000 url("${url}") center / cover no-repeat`;
+  }
+
   _render(message = "") {
     this._lang = pickLang(this._hass);
     this._message = message;
@@ -434,6 +447,8 @@ class EzvizCloudLiveCard extends HTMLElement {
         <button style="font:inherit;padding:10px 18px;border:0;border-radius:18px;cursor:pointer;background:var(--primary-color);color:var(--text-primary-color,#fff)"></button>
       </div>`;
     this._box = this._card.firstElementChild;
+    this._bgUrl = null;
+    this._applyBg();
     this._recButton = null;
     this._live = null;
     this._box.firstElementChild.textContent = message;
